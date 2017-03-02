@@ -1,0 +1,32 @@
+#!/bin/sh
+#functions
+cd "$(dirname $0)"
+
+printBars() {
+  num=$1
+  retVal=$(printf "%-${num}s" "|")
+  echo "${retVal// /|}"
+}
+#Insert find line number function to find line number of element.
+
+#Disk Space Calculations
+usedSpace=$(df -hl | grep '/dev/disk1' | awk '{sub("%","");print $5}')
+sed -i'' -e  "9s/.*/$usedSpace%/" MacHUD.html
+numUsedBars=$(($usedSpace/5))
+usedBars="$(printBars $numUsedBars)"
+numFreeBars=$((20-$numUsedBars))
+freeBars="$(printBars $numFreeBars)"
+sed -i '' -e "11s/.*/<barsUsed>$usedBars<\/barsUsed><barsFree>$freeBars<\/barsFree>/" MacHUD.html
+
+
+#Find Active Network Adapter(s)
+#Print IP, subnet mask, gateway, DNS servers, and domain suffix
+wiFiAddy="$(ifconfig en0 | awk '{ print $2}' | grep -E -o "([0-9]{1,3}[\.]){3}[0-9]{1,3}")"
+sed -i '' -e "16s/.*/$wiFiAddy/" MacHUD.html
+
+#Find External IP
+#Print IP and  provider
+extAddyJson="$(curl -s http://ip-api.com/json)"
+isp="$(echo $extAddyJson | awk 'BEGIN { FS = "," } ; { print $5 }' | sed 's/\"//g' | sed 's/isp:/ISP: /g')"
+extAddy="$(echo $extAddyJson | awk 'BEGIN { FS = "," } ; { print $9 }' | sed 's/\"//g' | sed 's/query:/IP: /g')"
+
